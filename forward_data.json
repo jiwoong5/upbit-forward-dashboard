@@ -1,0 +1,94 @@
+{
+  "generated_utc": "2026-07-18T04:45:55.549274+00:00",
+  "market": "KRW-BTC",
+  "seed_krw": 100000,
+  "strategy": "Donchian 20/10 (종가기준, 일봉) — ADR-0011",
+  "series": [
+    {
+      "date": "2026-07-15",
+      "close": 95130000.0,
+      "entry_line": 96040000.0,
+      "exit_line": 92347000.0,
+      "entry": false,
+      "exit": false,
+      "action": "hold",
+      "mode": "LIVE"
+    },
+    {
+      "date": "2026-07-17",
+      "close": 94300000.0,
+      "entry_line": 96040000.0,
+      "exit_line": 92347000.0,
+      "entry": false,
+      "exit": false,
+      "action": "hold",
+      "mode": "LIVE"
+    }
+  ],
+  "runs": [
+    {
+      "ts": "2026-07-18T04:33:05.764911+00:00",
+      "date": "2026-07-17",
+      "close": 94300000.0,
+      "entry": false,
+      "exit": false,
+      "action": "hold",
+      "mode": "LIVE",
+      "krw": 0.80974646,
+      "btc": 0.0,
+      "ordered": false
+    },
+    {
+      "ts": "2026-07-18T04:27:14.955687+00:00",
+      "date": "2026-07-17",
+      "close": 94300000.0,
+      "entry": false,
+      "exit": false,
+      "action": "hold",
+      "mode": "LIVE",
+      "krw": 0.80974646,
+      "btc": 0.0,
+      "ordered": false
+    },
+    {
+      "ts": "2026-07-16T05:48:38.267866+00:00",
+      "date": "2026-07-15",
+      "close": 95130000.0,
+      "entry": false,
+      "exit": false,
+      "action": "hold",
+      "mode": "LIVE",
+      "krw": 100187.80974646,
+      "btc": 0.0,
+      "ordered": false
+    },
+    {
+      "ts": "2026-07-16T05:40:03.004487+00:00",
+      "date": "2026-07-15",
+      "close": 95130000.0,
+      "entry": false,
+      "exit": false,
+      "action": "-",
+      "mode": "signal_only",
+      "krw": null,
+      "btc": null,
+      "ordered": false
+    }
+  ],
+  "summary": {
+    "runs": 4,
+    "signal_days": 2,
+    "orders": 0,
+    "buys": 0,
+    "sells": 0,
+    "last_date": "2026-07-17",
+    "last_close": 94300000.0,
+    "entry_line": 96040000.0,
+    "exit_line": 92347000.0,
+    "dist_to_entry_pct": 1.8451749734888654,
+    "holding": false,
+    "last_krw": 0.80974646,
+    "last_btc": 0.0,
+    "last_run_ts": "2026-07-18T04:33:05.764911+00:00"
+  }
+}
