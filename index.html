@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>돈치안 실전 포워드 테스트 · KRW-BTC</title>
+<style>
+  :root{
+    color-scheme: light dark;
+    --plane:#f9f9f7; --surface:#fcfcfb;
+    --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+    --close:#2a78d6; --entry:#0ca30c; --exit:#d03b3b; --warn:#fab219; --good:#006300;
+    --channel:rgba(42,120,214,.08);
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --plane:#0d0d0d; --surface:#1a1a19;
+    --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --close:#3987e5; --entry:#0ca30c; --exit:#d03b3b; --warn:#fab219; --good:#0ca30c;
+    --channel:rgba(57,135,229,.12);
+  }}
+  :root[data-theme="dark"]{
+    --plane:#0d0d0d; --surface:#1a1a19;
+    --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+    --close:#3987e5; --entry:#0ca30c; --exit:#d03b3b; --warn:#fab219; --good:#0ca30c;
+    --channel:rgba(57,135,229,.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--plane);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 56px}
+  header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:4px}
+  h1{font-size:1.5rem;font-weight:650;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--ink2);font-size:.9rem}
+  .meta{color:var(--muted);font-size:.8rem;margin:6px 0 22px}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;
+    padding:3px 10px;border-radius:999px;border:1px solid var(--border)}
+  .pill .dot{width:8px;height:8px;border-radius:50%}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+    padding:18px 18px 16px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .kpi .lbl{font-size:.76rem;color:var(--muted);font-weight:600;letter-spacing:.02em}
+  .kpi .val{font-size:1.5rem;font-weight:660;margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .kpi .note{font-size:.78rem;color:var(--ink2);margin-top:2px}
+  .kpi .val.small{font-size:1.18rem}
+  .chart-card{margin-bottom:16px}
+  .chart-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+  .chart-title{font-weight:600;font-size:1rem}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--ink2)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:16px;height:0;border-top-width:2.5px;border-top-style:solid;display:inline-block}
+  .chart-box{position:relative;width:100%}
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:9px 11px;font-size:.8rem;box-shadow:0 6px 20px rgba(0,0,0,.14);
+    min-width:170px;opacity:0;transition:opacity .08s;z-index:5}
+  .tip .d{font-weight:650;margin-bottom:5px}
+  .tip .row{display:flex;justify-content:space-between;gap:14px;font-variant-numeric:tabular-nums}
+  .tip .row .k{color:var(--ink2)}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+  th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+  th:first-child,td:first-child,th.l,td.l{text-align:left}
+  thead th{color:var(--muted);font-weight:600;font-size:.76rem;border-bottom:1px solid var(--axis)}
+  tbody tr:hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+  .tag{font-size:.72rem;font-weight:600;padding:2px 7px;border-radius:6px;border:1px solid var(--border)}
+  .tag.buy{color:#fff;background:var(--entry);border-color:transparent}
+  .tag.sell{color:#fff;background:var(--exit);border-color:transparent}
+  .tag.hold{color:var(--ink2)}
+  .warn-txt{color:var(--exit);font-weight:600}
+  footer{color:var(--muted);font-size:.78rem;margin-top:22px;line-height:1.7}
+  .err{color:var(--exit);font-weight:600;padding:20px}
+  @media (max-width:520px){ h1{font-size:1.25rem} .kpi .val{font-size:1.3rem} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="meta">불러오는 중…</div>
+</div>
+
+<script>
+const F = {
+  won:  v => v==null ? "—" : "₩"+Math.round(v).toLocaleString("ko-KR"),
+  man:  v => (v/10000).toLocaleString("ko-KR",{maximumFractionDigits:0})+"만",
+  pct:  v => (v>=0?"+":"")+v.toFixed(2)+"%",
+  btc:  v => v==null ? "—" : (v===0 ? "0" : v.toLocaleString("ko-KR",{maximumFractionDigits:8})),
+  kst:  ts => { if(!ts) return "—";
+    const d=new Date(ts);
+    const p=d.toLocaleString("ko-KR",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",
+      day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+    return p.replace(/\. /g,"-").replace(/\.$/,"").replace(/-(\d\d):/," $1:"); },
+  mmdd: dt => dt ? dt.slice(5) : "—",
+};
+
+fetch("./forward_data.json?_="+Date.now())
+  .then(r => { if(!r.ok) throw new Error("forward_data.json "+r.status); return r.json(); })
+  .then(render)
+  .catch(e => { document.getElementById("app").innerHTML =
+    '<div class="err">데이터를 불러오지 못했습니다: '+e.message+
+    '<br><span style="font-weight:400">GitHub Pages(https)에서 열어야 합니다. 로컬 file://은 fetch가 차단됩니다.</span></div>'; });
+
+function render(D){
+  const s = D.summary, ser = D.series;
+  const cash = (s.last_krw!=null && s.last_krw < 5000);   // 주문 불가(최소주문액 미만)
+  const fresh = s.last_run_ts ? (Date.now()-new Date(s.last_run_ts).getTime())/36e5 < 30 : false;
+
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <header class="top">
+      <h1>돈치안 실전 포워드 테스트</h1>
+      <span class="sub">${D.market} · ${D.strategy}</span>
+    </header>
+    <div class="meta">
+      <span class="pill"><span class="dot" style="background:${fresh?'var(--entry)':'var(--warn)'}"></span>
+        ${fresh?'정상 가동':'실행 지연'} · ${s.holding?'BTC 보유':'현금 대기'}</span>
+      &nbsp; 시드 ${F.won(D.seed_krw)} &nbsp;·&nbsp; 최근 실행 ${F.kst(s.last_run_ts)} (KST)
+      &nbsp;·&nbsp; 데이터 갱신 ${F.kst(D.generated_utc)}
+    </div>
+
+    <section class="kpis">
+      ${kpi("최근 종가", F.won(s.last_close), "신호일 "+F.mmdd(s.last_date))}
+      ${kpi("진입선까지", s.dist_to_entry_pct==null?"—":F.pct(s.dist_to_entry_pct),
+            "돌파 시 매수 · 진입선 "+F.won(s.entry_line))}
+      ${kpi("포지션", s.holding?"BTC 보유":"현금", s.holding?("BTC "+F.btc(s.last_btc)):"미보유", s.holding?"":"small")}
+      ${kpi("KRW 잔고", F.won(s.last_krw), cash?'<span class="warn-txt">⚠ 최소주문액 미만 · 입금 필요</span>':"매수 가능", "small")}
+      ${kpi("실행 / 신호일", s.runs+" / "+s.signal_days, "회 · 일")}
+      ${kpi("주문", s.orders+"건", "매수 "+s.buys+" · 매도 "+s.sells)}
+    </section>
+
+    <section class="card chart-card">
+      <div class="chart-head">
+        <span class="chart-title">돈치안 채널 — 종가 vs 진입/청산선</span>
+        <span class="legend">
+          <span><i style="border-color:var(--close)"></i>종가</span>
+          <span><i style="border-color:var(--entry);border-top-style:dashed"></i>진입선(전20고)</span>
+          <span><i style="border-color:var(--exit);border-top-style:dashed"></i>청산선(전10저)</span>
+        </span>
+      </div>
+      <div class="chart-box" id="cbox">
+        <div class="tip" id="tip"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="chart-title" style="margin-bottom:10px">실행 로그</div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th class="l">실행시각 (KST)</th><th>신호일</th><th>종가</th>
+          <th>진입</th><th>청산</th><th class="l">행동</th><th>모드</th><th>KRW</th>
+        </tr></thead>
+        <tbody>${D.runs.map(rowRun).join("")}</tbody>
+      </table>
+      </div>
+    </section>
+
+    <footer>
+      · 서술적 관측 로그입니다(ADR-0010) — 미래 수익을 예측하지 않습니다.<br>
+      · 봇이 매 실행 후 <code>docs/forward_data.json</code>을 갱신하고, 커밋되면 이 페이지에 반영됩니다.
+      데이터가 쌓일수록 채널 차트가 채워집니다.
+    </footer>`;
+
+  buildChart(ser);
+}
+
+function kpi(lbl, val, note, cls=""){
+  return `<div class="card kpi"><div class="lbl">${lbl}</div>
+    <div class="val ${cls}">${val}</div><div class="note">${note}</div></div>`;
+}
+
+function rowRun(r){
+  const tag = r.action==="BUY" ? '<span class="tag buy">매수</span>'
+            : r.action==="SELL"? '<span class="tag sell">매도</span>'
+            : '<span class="tag hold">HOLD</span>';
+  return `<tr>
+    <td class="l">${F.kst(r.ts)}</td><td>${F.mmdd(r.date)}</td><td>${F.won(r.close)}</td>
+    <td>${r.entry?"✓":"·"}</td><td>${r.exit?"✓":"·"}</td>
+    <td class="l">${tag}</td><td>${r.mode}</td>
+    <td>${r.krw==null?"—":F.won(r.krw)}</td></tr>`;
+}
+
+// ---- SVG 채널 차트 ----
+function buildChart(ser){
+  const box = document.getElementById("cbox"), tip = document.getElementById("tip");
+  const W=960, H=440, mL=66, mR=64, mT=18, mB=38;
+  const iw=W-mL-mR, ih=H-mT-mB;
+  const n=ser.length;
+
+  if(n===0){ box.insertAdjacentHTML("afterbegin",
+    '<div style="padding:40px;color:var(--muted);text-align:center">아직 신호 데이터가 없습니다.</div>'); return; }
+
+  const vals=[]; ser.forEach(d=>vals.push(d.close,d.entry_line,d.exit_line));
+  let lo=Math.min(...vals), hi=Math.max(...vals);
+  const pad=(hi-lo||hi*0.02)*0.12; lo-=pad; hi+=pad;
+  const X = i => mL + (n===1 ? iw/2 : iw*i/(n-1));
+  const Y = v => mT + ih*(1-(v-lo)/(hi-lo));
+  const path = key => ser.map((d,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(d[key]).toFixed(1)).join(" ");
+  // 채널 밴드 폴리곤(진입선 위 → 청산선 아래로 되돌아)
+  const band = ser.map((d,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(d.entry_line).toFixed(1)).join(" ")
+    + " " + ser.map((d,i)=>"L"+X(n-1-i).toFixed(1)+" "+Y(ser[n-1-i].exit_line).toFixed(1)).join(" ") + " Z";
+
+  // y 눈금 5개
+  let grid="",yl="";
+  const TICKS=5;
+  for(let t=0;t<=TICKS;t++){ const v=lo+(hi-lo)*t/TICKS, y=Y(v).toFixed(1);
+    grid+=`<line x1="${mL}" y1="${y}" x2="${W-mR}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+    yl+=`<text x="${mL-10}" y="${y}" fill="var(--muted)" font-size="12" text-anchor="end" dominant-baseline="middle">${F.man(v)}</text>`;
+  }
+  // x 라벨
+  let xl="";
+  ser.forEach((d,i)=>{ if(n<=8 || i===0 || i===n-1 || i%Math.ceil(n/8)===0)
+    xl+=`<text x="${X(i).toFixed(1)}" y="${H-mB+20}" fill="var(--muted)" font-size="12" text-anchor="middle">${d.date.slice(5)}</text>`; });
+
+  // 종가 마커 + 신호 트리거
+  let dots="";
+  ser.forEach((d,i)=>{ const cx=X(i).toFixed(1), cy=Y(d.close).toFixed(1);
+    dots+=`<circle cx="${cx}" cy="${cy}" r="4" fill="var(--surface)" stroke="var(--close)" stroke-width="2.5"/>`;
+    if(d.entry) dots+=`<path d="M${cx} ${Y(d.close)-16} l6 11 h-12 Z" fill="var(--entry)"/>`;
+    if(d.exit)  dots+=`<path d="M${cx} ${+cy+16} l6 -11 h-12 Z" fill="var(--exit)"/>`;
+  });
+
+  // 끝점 라벨
+  const last=ser[n-1], lx=X(n-1).toFixed(1);
+  const endLbl=(v,color,txt,dy)=>`<text x="${+lx+6}" y="${(Y(v)+dy).toFixed(1)}" fill="${color}" font-size="11" font-weight="600" dominant-baseline="middle">${txt}</text>`;
+
+  box.insertAdjacentHTML("afterbegin", `
+  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="돈치안 채널 차트">
+    <path d="${band}" fill="var(--channel)"/>
+    ${grid}
+    <line x1="${mL}" y1="${mT}" x2="${mL}" y2="${H-mB}" stroke="var(--axis)" stroke-width="1"/>
+    <line x1="${mL}" y1="${H-mB}" x2="${W-mR}" y2="${H-mB}" stroke="var(--axis)" stroke-width="1"/>
+    ${yl}${xl}
+    <path d="${path("entry_line")}" fill="none" stroke="var(--entry)" stroke-width="2" stroke-dasharray="6 4" opacity=".9"/>
+    <path d="${path("exit_line")}"  fill="none" stroke="var(--exit)"  stroke-width="2" stroke-dasharray="6 4" opacity=".9"/>
+    <path d="${path("close")}" fill="none" stroke="var(--close)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${dots}
+    ${endLbl(last.entry_line,"var(--entry)","진입",-2)}
+    ${endLbl(last.exit_line,"var(--exit)","청산",2)}
+    <line id="cross" x1="0" y1="${mT}" x2="0" y2="${H-mB}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" opacity="0"/>
+    <rect x="${mL}" y="${mT}" width="${iw}" height="${ih}" fill="transparent" id="hit"/>
+  </svg>`);
+
+  const svg=box.querySelector("svg"), cross=svg.querySelector("#cross"), hit=svg.querySelector("#hit");
+  const idxAt = px => { const i=n===1?0:Math.round((px-mL)/(iw/(n-1))); return Math.max(0,Math.min(n-1,i)); };
+  function move(ev){
+    const r=svg.getBoundingClientRect(), sx=(ev.clientX-r.left)*(W/r.width);
+    const i=idxAt(sx), d=ser[i], px=X(i);
+    cross.setAttribute("x1",px); cross.setAttribute("x2",px); cross.setAttribute("opacity",".6");
+    const dist=(d.entry_line-d.close)/d.close*100;
+    tip.innerHTML=`<div class="d">${d.date} · ${d.mode||""}</div>
+      <div class="row"><span class="k">종가</span><span>${F.won(d.close)}</span></div>
+      <div class="row"><span class="k">진입선</span><span>${F.won(d.entry_line)}</span></div>
+      <div class="row"><span class="k">청산선</span><span>${F.won(d.exit_line)}</span></div>
+      <div class="row"><span class="k">진입까지</span><span>${F.pct(dist)}</span></div>
+      <div class="row"><span class="k">행동</span><span>${d.action}</span></div>`;
+    const bw=box.clientWidth, tipX=Math.min(bw-190, Math.max(6, px/W*bw+12));
+    tip.style.left=tipX+"px"; tip.style.top="10px"; tip.style.opacity="1";
+  }
+  hit.addEventListener("pointermove",move);
+  hit.addEventListener("pointerdown",move);
+  svg.addEventListener("pointerleave",()=>{cross.setAttribute("opacity","0");tip.style.opacity="0";});
+}
+</script>
+</body>
+</html>
