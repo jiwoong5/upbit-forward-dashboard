@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>돈치안 실전 포워드 테스트 · KRW-BTC</title>
+<title>실전 포워드 A/B · KRW-BTC — 돈치안 vs 크립토 보글</title>
 <style>
   :root{
     color-scheme: light dark;
@@ -105,12 +105,17 @@ function render(D){
   const s = D.summary, ser = D.series;
   const cash = (s.last_krw!=null && s.last_krw < 5000);   // 주문 불가(최소주문액 미만)
   const fresh = s.last_run_ts ? (Date.now()-new Date(s.last_run_ts).getTime())/36e5 < 30 : false;
+  // A/B 암 평가액 — A: 돈치안(실자본), B: DCA 크립토 보글(페이퍼, ADR-0016)
+  const aEq = (s.last_krw!=null && s.last_btc!=null && s.last_close!=null)
+              ? s.last_krw + s.last_btc*s.last_close : null;
+  const aPnl = aEq!=null ? (aEq/D.seed_krw-1)*100 : null;
+  const b = (D.dca && D.dca.summary) ? D.dca.summary : null;
 
   const app = document.getElementById("app");
   app.innerHTML = `
     <header class="top">
-      <h1>돈치안 실전 포워드 테스트</h1>
-      <span class="sub">${D.market} · ${D.strategy}</span>
+      <h1>실전 포워드 A/B</h1>
+      <span class="sub">${D.market} · A: ${D.strategy} (실자본) · B: DCA 월정액 — 크립토 보글 대조군 (페이퍼, ADR-0016)</span>
     </header>
     <div class="meta">
       <span class="pill"><span class="dot" style="background:${fresh?'var(--entry)':'var(--warn)'}"></span>
@@ -124,9 +129,25 @@ function render(D){
       ${kpi("진입선까지", s.dist_to_entry_pct==null?"—":F.pct(s.dist_to_entry_pct),
             "돌파 시 매수 · 진입선 "+F.won(s.entry_line))}
       ${kpi("포지션", s.holding?"BTC 보유":"현금", s.holding?("BTC "+F.btc(s.last_btc)):"미보유", s.holding?"":"small")}
+      ${kpi("A암 평가액 · 돈치안", aEq==null?"—":F.won(aEq),
+            aEq==null?"실행 데이터 대기":((aPnl>=0?"+":"")+aPnl.toFixed(2)+"% vs 시드"), "small")}
+      ${kpi("B암 평가액 · DCA", b?F.won(b.value):"—",
+            b?(F.pct(b.pnl_pct)+" · 매수 "+b.buys+"회 · 페이퍼"):"대조군 데이터 대기", "small")}
       ${kpi("KRW 잔고", F.won(s.last_krw), cash?'<span class="warn-txt">⚠ 최소주문액 미만 · 입금 필요</span>':"매수 가능", "small")}
       ${kpi("실행 / 신호일", s.runs+" / "+s.signal_days, "회 · 일")}
       ${kpi("주문", s.orders+"건", "매수 "+s.buys+" · 매도 "+s.sells)}
+    </section>
+
+    <section class="card chart-card">
+      <div class="chart-head">
+        <span class="chart-title">A/B 자산곡선 — 돈치안(실자본) vs DCA 보글(페이퍼)</span>
+        <span class="legend">
+          <span><i style="border-color:var(--close)"></i>A 돈치안</span>
+          <span><i style="border-color:var(--warn)"></i>B DCA 보글</span>
+          <span><i style="border-color:var(--muted);border-top-style:dashed"></i>시드 10만</span>
+        </span>
+      </div>
+      <div class="chart-box" id="abbox"></div>
     </section>
 
     <section class="card chart-card">
@@ -158,11 +179,54 @@ function render(D){
 
     <footer>
       · 서술적 관측 로그입니다(ADR-0010) — 미래 수익을 예측하지 않습니다.<br>
-      · 봇이 매 실행 후 <code>docs/forward_data.json</code>을 갱신하고, 커밋되면 이 페이지에 반영됩니다.
-      데이터가 쌓일수록 채널 차트가 채워집니다.
+      · A/B 판정 질문: "돈치안이 벌었나"가 아니라 <b>"같은 기간 크립토 보글(DCA) 대비 위험조정 우위인가"</b>.<br>
+      · B암(DCA)은 페이퍼 원장입니다 — 실자본 미투입(ADR-0016). 실자본 노출은 A암 시드뿐.<br>
+      · 봇이 매 실행 후 <code>forward_data.json</code>을 갱신하고, 커밋되면 이 페이지에 반영됩니다.
+      데이터가 쌓일수록 차트가 채워집니다.
     </footer>`;
 
+  buildABChart(D);
   buildChart(ser);
+}
+
+// ---- A/B 자산곡선 차트 (A: 돈치안 실자본 · B: DCA 페이퍼) ----
+function buildABChart(D){
+  const box = document.getElementById("abbox");
+  const A = (D.series||[]).filter(d=>d.equity!=null).map(d=>({date:d.date, v:d.equity}));
+  const B = ((D.dca&&D.dca.series)||[]).map(d=>({date:d.date, v:d.value}));
+  const dates = [...new Set([...A,...B].map(d=>d.date))].sort();
+  if(dates.length===0){
+    box.innerHTML='<div style="padding:36px;color:var(--muted);text-align:center">아직 자산곡선 데이터가 없습니다 — A/B 기록이 쌓이면 채워집니다.</div>';
+    return;
+  }
+  const iA=new Map(A.map(d=>[d.date,d.v])), iB=new Map(B.map(d=>[d.date,d.v]));
+  const W=960,H=300,mL=70,mR=20,mT=14,mB=34, iw=W-mL-mR, ih=H-mT-mB, n=dates.length;
+  const vals=[...A.map(d=>d.v),...B.map(d=>d.v),D.seed_krw];
+  let lo=Math.min(...vals), hi=Math.max(...vals);
+  const pad=(hi-lo||hi*.02)*.15; lo-=pad; hi+=pad;
+  const X=i=> mL+(n===1?iw/2:iw*i/(n-1)), Y=v=> mT+ih*(1-(v-lo)/(hi-lo));
+  const path=m=>{let s="",pen=false; dates.forEach((dt,i)=>{const v=m.get(dt);
+    if(v==null){pen=false;return;} s+=(pen?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)+" "; pen=true;}); return s;};
+  let grid="",yl="";
+  for(let t=0;t<=4;t++){const v=lo+(hi-lo)*t/4, y=Y(v).toFixed(1);
+    grid+=`<line x1="${mL}" y1="${y}" x2="${W-mR}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+    yl+=`<text x="${mL-10}" y="${y}" fill="var(--muted)" font-size="12" text-anchor="end" dominant-baseline="middle">${F.man(v)}</text>`;}
+  let xl="";
+  dates.forEach((dt,i)=>{ if(n<=8 || i===0 || i===n-1 || i%Math.ceil(n/8)===0)
+    xl+=`<text x="${X(i).toFixed(1)}" y="${H-mB+20}" fill="var(--muted)" font-size="12" text-anchor="middle">${dt.slice(5)}</text>`;});
+  const dots=(m,c)=>dates.map((dt,i)=>{const v=m.get(dt); return v==null?"":
+    `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.5" fill="var(--surface)" stroke="${c}" stroke-width="2"/>`;}).join("");
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="A/B 자산곡선">
+    ${grid}
+    <line x1="${mL}" y1="${Y(D.seed_krw).toFixed(1)}" x2="${W-mR}" y2="${Y(D.seed_krw).toFixed(1)}"
+      stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 4"/>
+    <line x1="${mL}" y1="${mT}" x2="${mL}" y2="${H-mB}" stroke="var(--axis)" stroke-width="1"/>
+    <line x1="${mL}" y1="${H-mB}" x2="${W-mR}" y2="${H-mB}" stroke="var(--axis)" stroke-width="1"/>
+    ${yl}${xl}
+    <path d="${path(iB)}" fill="none" stroke="var(--warn)" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="${path(iA)}" fill="none" stroke="var(--close)" stroke-width="2.5" stroke-linejoin="round"/>
+    ${dots(iB,"var(--warn)")}${dots(iA,"var(--close)")}
+  </svg>`;
 }
 
 function kpi(lbl, val, note, cls=""){
