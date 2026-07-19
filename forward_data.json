@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-18T11:09:49.157773+00:00",
+  "generated_utc": "2026-07-19T00:10:08.975535+00:00",
   "market": "KRW-BTC",
   "seed_krw": 50000,
   "strategy": "Donchian 20/10 (종가기준, 일봉) — ADR-0011",
@@ -25,9 +25,32 @@
       "action": "hold",
       "mode": "LIVE",
       "equity": 50000.80974646
+    },
+    {
+      "date": "2026-07-18",
+      "close": 95485000.0,
+      "entry_line": 96040000.0,
+      "exit_line": 92347000.0,
+      "entry": false,
+      "exit": false,
+      "action": "hold",
+      "mode": "LIVE",
+      "equity": 50000.80974646
     }
   ],
   "runs": [
+    {
+      "ts": "2026-07-19T00:10:07.654263+00:00",
+      "date": "2026-07-18",
+      "close": 95485000.0,
+      "entry": false,
+      "exit": false,
+      "action": "hold",
+      "mode": "LIVE",
+      "krw": 50000.80974646,
+      "btc": 0.0,
+      "ordered": false
+    },
     {
       "ts": "2026-07-18T10:31:34.047655+00:00",
       "date": "2026-07-17",
@@ -102,20 +125,20 @@
     }
   ],
   "summary": {
-    "runs": 6,
-    "signal_days": 2,
+    "runs": 7,
+    "signal_days": 3,
     "orders": 0,
     "buys": 0,
     "sells": 0,
-    "last_date": "2026-07-17",
-    "last_close": 94300000.0,
+    "last_date": "2026-07-18",
+    "last_close": 95485000.0,
     "entry_line": 96040000.0,
     "exit_line": 92347000.0,
-    "dist_to_entry_pct": 1.8451749734888654,
+    "dist_to_entry_pct": 0.5812431271927528,
     "holding": false,
     "last_krw": 50000.80974646,
     "last_btc": 0.0,
-    "last_run_ts": "2026-07-18T10:31:34.047655+00:00"
+    "last_run_ts": "2026-07-19T00:10:07.654263+00:00"
   },
   "dca": {
     "label": "DCA 월정액 (크립토 보글 대조군)",
@@ -128,15 +151,23 @@
         "cum_invested": 10000,
         "cum_btc": 0.0001057012024238835,
         "action": "mark"
+      },
+      {
+        "date": "2026-07-19",
+        "price": 95550000.0,
+        "value": 50099.74989160207,
+        "cum_invested": 10000,
+        "cum_btc": 0.0001057012024238835,
+        "action": "mark"
       }
     ],
     "summary": {
       "buys": 1,
       "cum_btc": 0.0001057012024238835,
       "cum_invested": 10000,
-      "value": 49995.4228048097,
-      "pnl_pct": -0.009154390380605726,
-      "last_ts": "2026-07-18T10:53:11.893749+00:00"
+      "value": 50099.74989160207,
+      "pnl_pct": 0.19949978320414896,
+      "last_ts": "2026-07-19T00:10:08.963523+00:00"
     }
   }
 }
